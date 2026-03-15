@@ -1,151 +1,96 @@
-@extends('layouts.app')
+# HyperFolio
 
-@section('content')
-    <section class="max-w-6xl mx-auto p-6">
+HyperFolio is a modern project management application built with Laravel, HTMX, and Tailwind CSS. It provides a seamless user experience with dynamic interactions powered by HTMX and a responsive design using Tailwind CSS. The application is containerized with Docker for easy setup and deployment.
 
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-bold">My Projects</h2>
-            <!-- Add New Project Button -->
-            <button class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                    hx-get="{{ route('projects.create') }}"
-                    hx-target="#project-modal-content"
-                    hx-swap="innerHTML">
-                + Add New Project
-            </button>
-        </div>
+## Technology Stack
 
+- **Laravel**: PHP framework for backend and API development
+- **HTMX**: For dynamic, AJAX-like interactions without writing JavaScript
+- **Tailwind CSS**: Utility-first CSS framework for styling
+- **Docker**: Containerization for consistent development and deployment environment
 
-        <!-- HTMX Modal -->
-        <div id="project-modal"
-             class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-6">
-            <div id="project-modal-content"
-                 class="bg-white rounded shadow-lg p-6 relative max-w-2xl w-full">
-                <button type="button" class="modal-close absolute top-2 right-2 text-gray-600 text-2xl font-bold">&times;</button>
-                <!-- HTMX will inject forms or details here -->
-            </div>
-        </div>
-        <!-- Success Message Container -->
-        <div id="success-message-container" class="mb-4"></div>
-        <!-- Project Grid -->
-        <div id="projects-grid" class="grid md:grid-cols-3 gap-6">
-            @foreach($projects as $project)
-                <div class="bg-white p-4 rounded shadow hover:shadow-lg transition" id="project-{{ $project->id }}">
-                    <h3 class="text-xl font-semibold">{{ $project->title }}</h3>
-                    <p>{{ Str::limit($project->description, 60) }}</p>
+## Setup Instructions
 
-                    <!-- HTMX View Details button -->
-                    <button class="mt-2 px-3 py-1 bg-blue-600 text-white rounded"
-                            hx-get="{{ route('projects.show', $project) }}"
-                            hx-target="#project-modal-content"
-                            hx-swap="innerHTML">
-                        View Details
-                    </button>
+### Prerequisites
 
-                    <!-- Edit & Delete buttons -->
-                    <a href="{{ route('projects.edit', $project) }}"
-                       class="mt-2 inline-block bg-yellow-500 text-white px-3 py-1 rounded">Edit</a>
+- [Docker](https://www.docker.com/get-started) installed on your machine
+- [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
 
-                    <form action="{{ route('projects.destroy', $project) }}" method="POST" class="inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" onclick="return confirm('Are you sure?');"
-                                class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
-                    </form>
-                </div>
-            @endforeach
-        </div>
+### Clone the Repository
 
-        <!-- Pagination -->
-        <div class="mt-6">
-            {{ $projects->links() }}
-        </div>
-    </section>
+```bash
+git clone https://github.com/yourusername/hyperfolio.git
+cd hyperfolio
+```
 
-    <!-- Example Partial Project Card for HTMX OOB Swap -->
-    <!--
-    <template id="project-card-template">
-        <div class="bg-white p-4 rounded shadow hover:shadow-lg transition" id="project-{{ $project->id }}" hx-swap-oob="beforeend:#projects-grid">
-            <h3 class="text-xl font-semibold">{{ $project->title }}</h3>
-            <p>{{ Str::limit($project->description, 60) }}</p>
+### Environment Configuration
 
-            <button class="mt-2 px-3 py-1 bg-blue-600 text-white rounded"
-                    hx-get="{{ route('projects.show', $project->id) }}"
-                    hx-target="#project-modal-content"
-                    hx-swap="innerHTML">
-                View Details
-            </button>
+Copy the example environment file and generate an application key:
 
-            <a href="{{ route('projects.edit', $project->id) }}"
-               class="mt-2 inline-block bg-yellow-500 text-white px-3 py-1 rounded">Edit</a>
+```bash
+cp .env.example .env
+```
 
-            <form action="{{ route('projects.destroy', $project->id) }}" method="POST" class="inline">
-                @csrf
-                @method('DELETE')
-                <button type="submit" onclick="return confirm('Are you sure?');"
-                        class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
-            </form>
-        </div>
-    </template>
-    -->
+You can customize the `.env` file if needed, but the defaults should work with Docker.
 
-    <script>
-        const modal = document.getElementById('project-modal');
-        const modalContent = document.getElementById('project-modal-content');
+### Build and Run with Docker Compose
 
-        // Function to show modal
-        function showModal() {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
+Build and start the containers:
 
-        // Function to hide modal and reset content
-        function hideModal() {
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-            modalContent.innerHTML = '<button type="button" class="modal-close absolute top-2 right-2 text-gray-600 text-2xl font-bold">&times;</button>';
-        }
+```bash
+docker-compose up -d --build
+```
 
-        // Event delegation for modal close button
-        modal.addEventListener('click', function(event) {
-            if(event.target === modal || event.target.classList.contains('modal-close')) {
-                hideModal();
-            }
-        });
+This command will:
 
-        // Show modal after HTMX swaps content into modal-content
-        document.body.addEventListener('htmx:afterSwap', function(event) {
-            if(event.detail.target.id === "project-modal-content") {
-                showModal();
-            }
-            if(event.detail.target.id === "projects-grid") {
-                // make sure new project cards are visible after OOB swap
-                event.detail.target.scrollIntoView({ behavior: 'smooth' });
-                // If the swap is a result of a successful project creation, close modal and show success message
-                // We'll check if the triggering element was a project creation form
-                if (window.lastHTMXTriggeringElement && window.lastHTMXTriggeringElement.closest('form') && window.lastHTMXTriggeringElement.closest('form').id === 'project-create-form') {
-                    hideModal();
-                    // Show success message
-                    const msgContainer = document.getElementById('success-message-container');
-                    msgContainer.innerHTML = `<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                        Project added successfully!
-                    </div>`;
-                    // Remove after 3 seconds
-                    setTimeout(() => { msgContainer.innerHTML = ''; }, 3000);
-                }
-            }
-        });
+- Build the application container
+- Start the application and database containers
+- Run necessary migrations and seeders (if configured)
 
-        // Keep track of the last triggering element for HTMX requests
-        document.body.addEventListener('htmx:configRequest', function(event) {
-            window.lastHTMXTriggeringElement = event.detail.elt;
-        });
+### Access the Application
 
-        // Handle HTMX errors (404, etc.)
-        document.body.addEventListener('htmx:responseError', function(event) {
-            if(event.detail.xhr.status === 404) {
-                hideModal();
-                alert("Project not found.");
-            }
-        });
-    </script>
-@endsection
+Once the containers are running, access HyperFolio at:
+
+```
+http://localhost:8000
+```
+
+### Running Artisan Commands
+
+To run Laravel Artisan commands inside the Docker container:
+
+```bash
+docker-compose exec app php artisan migrate
+docker-compose exec app php artisan db:seed
+```
+
+### Stopping the Containers
+
+To stop the running containers:
+
+```bash
+docker-compose down
+```
+
+## Usage Notes
+
+- Use the **Add New Project** button to create new projects dynamically via HTMX-powered modals.
+- View, edit, and delete projects seamlessly without full page reloads.
+- Pagination is supported for easy navigation through projects.
+- Success messages and error handling are integrated for better user feedback.
+
+## Testing
+
+If tests are included, you can run them inside the container:
+
+```bash
+docker-compose exec app php artisan test
+```
+
+## Contributing
+
+Feel free to fork and submit pull requests to improve HyperFolio.
+
+---
+
+Thank you for using HyperFolio! If you encounter any issues or have suggestions, please open an issue on the GitHub repository.
