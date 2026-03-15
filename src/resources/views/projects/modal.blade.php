@@ -1,6 +1,6 @@
 <div class="bg-white rounded shadow-lg p-6 max-w-2xl mx-auto relative">
     <button
-            onclick="document.getElementById('project-details').classList.add = 'hidden';
+            onclick="document.getElementById('project-details').style.display = 'none';
             document.getElementById('project-details').classList.remove('flex')"
             class="absolute top-2 right-4 text-gray-500 text-3xl">&times;
     </button>

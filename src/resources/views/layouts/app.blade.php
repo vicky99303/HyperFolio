@@ -9,7 +9,7 @@
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.3"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans">
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
 <header class="bg-white shadow p-4 flex justify-between items-center">
     <h1 class="text-2xl font-bold">HyperFolio</h1>
@@ -22,12 +22,12 @@
     </nav>
 </header>
 
-<main class="p-6">
+<main class="p-6 flex-grow">
     @yield('content')
 </main>
 
-<footer class="bg-white shadow p-4 mt-12 text-center">
-    &copy; {{ date('Y') }} HyperFolio
+<footer class="text-center py-4 text-gray-500 border-t">
+    © 2026 HyperFolio
 </footer>
 
 </body>

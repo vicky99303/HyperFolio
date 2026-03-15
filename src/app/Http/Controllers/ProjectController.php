@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Project;
+use Illuminate\Support\Facades\Validator;
 
 class ProjectController extends Controller
 {
     public function index()
     {
-        // Paginate projects, 6 per page
-        $projects = Project::with('skills')->latest()->paginate(6);
+        // Paginate projects, 15 per page
+        $projects = Project::with('skills')->latest()->paginate(8);
         return view('projects.index', compact('projects'));
     }
 
@@ -21,18 +22,37 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'title' => 'required|string|max:255',
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255|unique:projects,title',
             'description' => 'nullable|string',
             'image' => 'nullable|url',
             'link' => 'nullable|url',
         ]);
 
+        if ($validator->fails()) {
+            if ($request->header('HX-Request')) {
+                return response()->json([
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $data = $validator->validated();
         $project = Project::create($data);
 
-        // Respond with the partial to append
-        return response()->view('projects.partials.project-card', compact('project'))
-            ->header('HX-Trigger', 'projectAdded');
+        // If request comes from HTMX, redirect back to projects page
+        if ($request->header('HX-Request')) {
+            return response('', 200)
+                ->header('HX-Redirect', route('projects.index'));
+        }
+
+        // Normal Laravel redirect
+        return redirect()->route('projects.index')
+            ->with('success', 'Project created successfully!');
     }
 
     public function show(Project $project)
@@ -49,7 +69,7 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project)
     {
         $data = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255|unique:projects,title,' . $project->id,
             'description' => 'nullable|string',
             'image' => 'nullable|url',
             'link' => 'nullable|url',

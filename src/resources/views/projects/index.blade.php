@@ -2,7 +2,17 @@
 
 @section('content')
     <section class="max-w-6xl mx-auto p-6">
+        @if(session('success'))
+            <div class="bg-green-500 text-white p-3 mb-4 rounded">
+                {{ session('success') }}
+            </div>
+        @endif
 
+        @if(session('error'))
+            <div class="bg-red-500 text-white p-3 mb-4 rounded">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-bold">My Projects</h2>
             <!-- Add New Project Button -->
@@ -24,8 +34,9 @@
                 <!-- HTMX will inject forms or details here -->
             </div>
         </div>
-        <!-- Success Message Container -->
+        <!-- Success & Error Message Containers -->
         <div id="success-message-container" class="mb-4"></div>
+        <div id="error-message-container" class="mb-4"></div>
         <!-- Project Grid -->
         <div id="projects-grid" class="grid md:grid-cols-3 gap-6">
             @foreach($projects as $project)
@@ -140,11 +151,42 @@
             window.lastHTMXTriggeringElement = event.detail.elt;
         });
 
-        // Handle HTMX errors (404, etc.)
+        // Handle HTMX errors (validation, 404, etc.)
         document.body.addEventListener('htmx:responseError', function(event) {
+            const errorContainer = document.getElementById('error-message-container');
+
             if(event.detail.xhr.status === 404) {
                 hideModal();
-                alert("Project not found.");
+                errorContainer.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    Project not found.
+                </div>`;
+                setTimeout(() => { errorContainer.innerHTML = ''; }, 4000);
+            }
+
+            if(event.detail.xhr.status === 422) {
+                let errors = '';
+                let responseText = event.detail.xhr.responseText;
+
+                try {
+                    const response = JSON.parse(responseText);
+                    if(response.errors) {
+                        Object.values(response.errors).forEach(function(msg) {
+                            if(Array.isArray(msg)) {
+                                msg.forEach(m => errors += `<li>${m}</li>`);
+                            } else {
+                                errors += `<li>${msg}</li>`;
+                            }
+                        });
+                    }
+                } catch(e) {
+                    // If response is not JSON (Laravel returned HTML), show generic message
+                    errors = `<li>Validation failed. Please check your input.</li>`;
+                }
+
+                errorContainer.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <strong>Validation Error:</strong>
+                    <ul class="list-disc ml-5">${errors}</ul>
+                </div>`;
             }
         });
     </script>
